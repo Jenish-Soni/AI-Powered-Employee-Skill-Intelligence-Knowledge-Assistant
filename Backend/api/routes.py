@@ -72,3 +72,38 @@ async def ask_hr(request: QueryRequest):
         raise HTTPException(status_code=500, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/hr/employee/{user_id}")
+async def delete_employee(user_id: str):
+    """
+    HR endpoint to delete an employee from Supabase Auth and the database.
+    """
+    from core.config import supabase
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client not configured")
+    try:
+        # Delete from auth.users (requires service role key, which is used in backend)
+        supabase.auth.admin.delete_user(user_id)
+        return {"message": "User deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
+
+from models.schemas import RoleUpdate
+
+@router.put("/admin/role/{user_id}")
+async def update_role(user_id: str, request: RoleUpdate):
+    """
+    Admin endpoint to change a user's role.
+    """
+    from core.config import supabase
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client not configured")
+        
+    if request.role not in ['admin', 'hr', 'employee']:
+        raise HTTPException(status_code=400, detail="Invalid role")
+        
+    try:
+        response = supabase.table("employees").update({"role": request.role}).eq("id", user_id).execute()
+        return {"message": "Role updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update role: {str(e)}")
