@@ -28,14 +28,16 @@ export default async function DashboardOverview() {
 
   // Fetch actual skills from the backend
   let savedSkills: any[] = [];
-  try {
-    const skillsResp = await fetch(`http://localhost:8000/api/skills/employee/${user.id}/skills`, { cache: 'no-store' });
-    if (skillsResp.ok) {
-      const data = await skillsResp.json();
-      savedSkills = data.skills || [];
+  if (user?.id) {
+    try {
+      const skillsResp = await fetch(`http://localhost:8000/api/skills/employee/${user.id}/skills`, { cache: 'no-store' });
+      if (skillsResp.ok) {
+        const data = await skillsResp.json();
+        savedSkills = data.skills || [];
+      }
+    } catch (e) {
+      console.error("Failed to fetch skills", e);
     }
-  } catch (e) {
-    console.error("Failed to fetch skills", e);
   }
 
   const softSkills = savedSkills.filter(s => s.category === 'Soft Skills').map(s => s.name);
