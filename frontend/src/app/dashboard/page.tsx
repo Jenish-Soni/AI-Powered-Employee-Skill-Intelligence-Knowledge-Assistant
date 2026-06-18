@@ -3,6 +3,7 @@ import { getUserDetails } from '@/utils/supabase/server'
 export default async function DashboardOverview() {
   const details = await getUserDetails()
   const employee = details?.employee
+  const user = details?.user
 
   if (!employee) {
     return (
@@ -24,6 +25,21 @@ export default async function DashboardOverview() {
   const formattedName = employee.first_name 
     ? `${employee.first_name} ${employee.last_name || ''}`.trim() 
     : employee.email.split('@')[0]
+
+  // Fetch actual skills from the backend
+  let savedSkills: any[] = [];
+  try {
+    const skillsResp = await fetch(`http://localhost:8000/api/skills/employee/${user.id}/skills`, { cache: 'no-store' });
+    if (skillsResp.ok) {
+      const data = await skillsResp.json();
+      savedSkills = data.skills || [];
+    }
+  } catch (e) {
+    console.error("Failed to fetch skills", e);
+  }
+
+  const softSkills = savedSkills.filter(s => s.category === 'Soft Skills').map(s => s.name);
+  const techSkills = savedSkills.filter(s => s.category !== 'Soft Skills').map(s => s.name);
 
   // Calculate percentages dynamically based on DB values
   const maxPlanned = 24; // Assuming 24 days total planned leave
@@ -130,7 +146,7 @@ export default async function DashboardOverview() {
         <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-lg flex flex-col shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-title-md text-title-md text-primary tracking-tight">Skills Matrix</h3>
-            <span className="material-symbols-outlined text-outline cursor-pointer hover:text-primary transition-colors text-[20px]">edit</span>
+            <a href="/dashboard/skills" className="material-symbols-outlined text-outline cursor-pointer hover:text-primary transition-colors text-[20px] no-underline">edit</a>
           </div>
           
           <div className="space-y-6 flex-1">
@@ -138,9 +154,9 @@ export default async function DashboardOverview() {
             <div>
               <p className="font-label-sm text-on-surface-variant uppercase tracking-widest mb-3 text-[11px] font-bold">TECHNICAL EXPERTISE</p>
               <div className="flex flex-wrap gap-2">
-                {employee.skills?.technical?.map((skill: string, i: number) => (
+                {techSkills.length > 0 ? techSkills.map((skill: string, i: number) => (
                   <span key={i} className="px-3 py-1.5 bg-secondary-container/50 text-secondary rounded-full text-label-sm font-semibold border border-secondary-container">{skill}</span>
-                )) || <span className="text-on-surface-variant text-body-sm">No skills added</span>}
+                )) : <span className="text-on-surface-variant text-body-sm">No skills added</span>}
               </div>
             </div>
             
@@ -148,9 +164,9 @@ export default async function DashboardOverview() {
             <div>
               <p className="font-label-sm text-on-surface-variant uppercase tracking-widest mb-3 text-[11px] font-bold">SOFT SKILLS</p>
               <div className="flex flex-wrap gap-2">
-                {employee.skills?.soft?.map((skill: string, i: number) => (
+                {softSkills.length > 0 ? softSkills.map((skill: string, i: number) => (
                   <span key={i} className="px-3 py-1.5 bg-surface-container-low text-on-surface rounded-full text-label-sm font-medium border border-outline-variant/50">{skill}</span>
-                )) || <span className="text-on-surface-variant text-body-sm">No skills added</span>}
+                )) : <span className="text-on-surface-variant text-body-sm">No skills added</span>}
               </div>
             </div>
           </div>
@@ -192,6 +208,46 @@ export default async function DashboardOverview() {
 
           </div>
         </div>
+
+        {/* Skill Intelligence Cards */}
+        <a href="/dashboard/skills" className="col-span-12 md:col-span-6 block no-underline">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-lg shadow-sm hover:shadow-md hover:border-secondary/50 transition-all cursor-pointer group h-full">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-secondary-container/50 flex items-center justify-center">
+                <span className="material-symbols-outlined text-secondary text-[24px]">psychology</span>
+              </div>
+              <span className="material-symbols-outlined text-outline group-hover:text-secondary transition-colors text-[20px]">arrow_forward</span>
+            </div>
+            <h3 className="font-title-md text-title-md text-primary tracking-tight mb-2">Skill Profile</h3>
+            <p className="text-body-sm text-on-surface-variant leading-relaxed">
+              Tell us what you already know. Select your skills and rate your proficiency to power personalised recommendations.
+            </p>
+            <div className="mt-4 inline-flex items-center gap-2 text-secondary font-semibold text-sm">
+              <span>Update my skills</span>
+              <span className="material-symbols-outlined text-[16px]">east</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="/dashboard/roadmap" className="col-span-12 md:col-span-6 block no-underline">
+          <div className="bg-primary-container border border-outline-variant rounded-xl p-stack-lg shadow-sm hover:shadow-md transition-all cursor-pointer group h-full">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-on-primary text-[24px]">route</span>
+              </div>
+              <span className="material-symbols-outlined text-on-primary-container/60 group-hover:text-on-primary transition-colors text-[20px]">arrow_forward</span>
+            </div>
+            <h3 className="font-title-md text-title-md text-on-primary tracking-tight mb-2">Learning Roadmap</h3>
+            <p className="text-body-sm text-on-primary-container leading-relaxed opacity-90">
+              Your AI-generated, personalised path to skill mastery. Resume where you left off — anytime, at your own pace.
+            </p>
+            <div className="mt-4 inline-flex items-center gap-2 text-on-primary font-semibold text-sm">
+              <span>View my roadmap</span>
+              <span className="material-symbols-outlined text-[16px]">east</span>
+            </div>
+          </div>
+        </a>
+
       </div>
     </div>
   )

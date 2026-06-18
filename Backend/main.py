@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router
+from api.skill_routes import router as skill_router
 
 app = FastAPI(title="AI HR Assistant")
 
@@ -13,5 +14,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include the API router
+# Include the API routers
 app.include_router(router, prefix="/api")
+app.include_router(skill_router, prefix="/api/skills")

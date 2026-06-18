@@ -7,3 +7,5 @@ pydantic
 google-genai
 pypdf
 python-multipart
+networkx
+numpy
